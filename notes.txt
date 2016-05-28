@@ -1,3 +1,12 @@
+missing slaves 1870
+the extents are
+
+x [-2351556, 2254162]  y [-1333538, 1567301]
+his are:
+x [-513210, 2538264]  y [-1595224, 2048594]
+
+the left data goes farther than his extent.
+
 extent:
 left: -513210
 right: 2538264
