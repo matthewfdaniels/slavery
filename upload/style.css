@@ -1,0 +1,11 @@
+.map-point {
+    background: red;
+    width: 2px;
+    height: 2px;
+    position: absolute;
+    border-radius: 100%;
+}
+
+body {
+    background: #111;
+}

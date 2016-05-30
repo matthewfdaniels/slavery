@@ -7,6 +7,18 @@ x [-513210, 2538264]  y [-1595224, 2048594]
 
 the left data goes farther than his extent.
 
+how did you scale the circles for greater than 125000?
+
+HSL Values seem wrong because L at 100% produces white...getting white for first middle and last value.
+your image also has 6 colors. maybe that's from the linear gradients.
+
+00.00%: 263, 88%, 100%
+23.75%: 20, 100%, 66%
+47.50%: 20, 100%, 100%
+71.25%: 0, 15%, 95%
+95.00%: 60, 100%, 100%
+
+
 extent:
 left: -513210
 right: 2538264
