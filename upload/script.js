@@ -4,10 +4,13 @@ var yearSelected = "1820";
 
 
 d3.csv("allpoints.csv", function(error, allPoints) {
+  d3.csv("line_paths.csv", function(error, borderPaths) {
+
+  console.log(allPoints);
 
   var xExtent = d3.extent(allPoints, function(d) { return +d.x });
   var yExtent = d3.extent(allPoints, function(d) { return +d.y });
-  var popExtent = d3.extent(allPoints, function(d) { return +d.total_1860 });
+  // var popExtent = d3.extent(allPoints, function(d) { return +d.total_1860 });
   var dimScale = (yExtent[1]-yExtent[0])/(xExtent[1]-xExtent[0]);
 
   var margin = {top: 0, right: 0, bottom: 0, left:0},
@@ -30,7 +33,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var xMapScale = d3.scale.linear().domain(xExtent).range([0,width]);
   var yMapScale = d3.scale.linear().domain(yExtent).range([height,0]);
   var popScale = d3.scale.threshold().domain(popX).range(popY);
-  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3]);
+  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.5]);
   var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["rgb(117, 31, 255)","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"]);
 
   var allPointsReMapped = [];
@@ -38,19 +41,144 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     var d = allPoints[point];
     var xReMap = xMapScale(+d.x);
     var yReMap = yMapScale(+d.y);
-    allPointsReMapped.push({x:xReMap,y:yReMap,"1860":{total_pop:d.total_1860,slave_pop:d.slaves_1860},"1820":{total_pop:d.total_1820,slave_pop:d.slaves_1820}});
+    allPointsReMapped.push({
+      x:xReMap,y:yReMap,
+      "1790":{
+        total_pop:d.total_1790,
+        slave_pop:d.slaves_1790
+      },
+      "1800":{
+        total_pop:d.total_1800,
+        slave_pop:d.slaves_1800
+      },
+      "1810":{
+        total_pop:d.total_1810,
+        slave_pop:d.slaves_1810
+      },
+      "1820":{
+        total_pop:d.total_1820,
+        slave_pop:d.slaves_1820
+      },
+      "1840":{
+        total_pop:d.total_1840,
+        slave_pop:d.slaves_1840
+      },
+      "1850":{
+        total_pop:d.total_1850,
+        slave_pop:d.slaves_1850
+      },
+      "1860":{
+        total_pop:d.total_1860,
+        slave_pop:d.slaves_1860
+      },
+      "1830":{
+        total_pop:d.total_1830,
+        slave_pop:d.slaves_1830
+      },
+      "1870":{
+        total_pop:d.total_1870,
+        slave_pop:0
+      },
+    });
   }
 
-  console.log(allPointsReMapped);
+  var mapWrapper = d3.select(".map-wrapper")
+    ;
 
-  var mapContainer = d3.select(".map-container")
-    .attr("width",width)
-    .attr("height",height)
+  var menu = mapWrapper
+    .append("div")
+    .attr("class","menu-test")
+    .selectAll("p")
+    .data(["1790","1800","1810","1820","1830","1840","1850","1860","1870"])
+    .enter()
+    .append("p")
+    .attr("class","menu-item")
+    .text(function(d){
+      return d;
+    })
+    .on("click",function(d){
+      yearSelected = d;
+      adjustCircles();
+    })
+    ;
+
+  var svg = mapWrapper.select(".map-container")
+    .attr("width","100%")
+    .attr("height","100%")
+    .attr("viewBox","0 0 950 950")
+    ;
+
+  function adjustCircles(){
+    circles
+      .each(function(d){
+        d.former = d.r;
+        d.r = getRadius(d);
+        return d.r != 0 || former != 0;
+      })
+      ;
+
+    svg.selectAll(".map-item")
+      .sort(function(a,b){
+        return a.r - b.r
+      })
+      ;
+
+    circles
+      .filter(function(d){
+        return d.former != 0 || d.r != 0;
+      })
+      .transition()
+      .duration(0)
+      .delay(function(d,i){
+        if(d.r>9){
+          return 100;
+        }
+        return d.r*1000;
+      })
+      .attr("r",function(d){
+        return getRadius(d);
+      })
+      .attr("fill",function(d){
+        return getColor(d);
+      })
+      ;
+  }
+
+  function getRadius(d){
+    if(d[yearSelected].total_pop == ""){
+      d.r = 0;
+    }
+    else if (+d[yearSelected].total_pop > 122791.41) {
+      d.r = 10;
+    }
+    else {
+      d.r = diameterAdjust(popScale(d[yearSelected].total_pop));
+    }
+    return d.r;
+  }
+
+  function getColor(d){
+    var totalPop = d[yearSelected].total_pop;
+    var slavePop = d[yearSelected].slave_pop;
+    if(totalPop == ""){
+      totalPop = 0;
+    }
+    if(slavePop == ""){
+      slavePop = 0;
+    }
+    if(totalPop == 0){
+      return null;
+    }
+    var color = colorGradient(+slavePop/+totalPop);
+    return color;
+  }
+
+  var circles = svg
     .selectAll("circle")
     .data(allPointsReMapped)
     .enter()
     .append("circle")
-    .attr("class","map-point")
+    .attr("class","map-point map-item")
     .attr("cx",function(d){
       return +d.x;
     })
@@ -58,31 +186,38 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       return +d.y;
     })
     .attr("r",function(d){
-      if(d[yearSelected].total_pop == ""){
-        return 0;
+      return getRadius(d);
+    })
+    .attr("stroke-width",function(d){
+      if(d.r>9){
+        return "1"
       }
-      if (+d[yearSelected].total_pop > 122791.41) {
-        return 10;
-      }
-      return diameterAdjust(popScale(d[yearSelected].total_pop));
     })
     .attr("fill",function(d){
-      var totalPop = d[yearSelected].total_pop;
-      var slavePop = d[yearSelected].slave_pop;
-      if(totalPop == ""){
-        totalPop = 0;
-      }
-      if(slavePop == ""){
-        slavePop = 0;
-      }
-      if(totalPop == 0){
-        return null;
-      }
-      var color = colorGradient(+slavePop/+totalPop);
-      return color;
-      // return "rgb("+color[0]+","+color[1]+","+color[2]+")";
+      return getColor(d);
     })
     ;
 
+  var paths = svg
+    .selectAll("path")
+    .data(borderPaths)
+    .enter()
+    .append("path")
+    .attr("class","map-item map-path")
+    .attr("transform","translate(0,20) scale(1.1)")
+    .attr("d",function(d){
+      d.r = 8;
+      return "M "+d.line;
+    })
+    ;
+
+  svg.selectAll(".map-item")
+    .sort(function(a,b){
+      return a.r - b.r
+    })
+    ;
+
+//line_paths.csv
+});
 //allpoints.csv
 });
