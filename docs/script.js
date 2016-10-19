@@ -1,15 +1,28 @@
 var bins=[[.48,1247],[1.09,1536],[1.6,1826],[2.53,2115],[4.16,2405],[5.69,2694],[6.94,2984],[8.15,3274],[9.75,3563],[11.73,3853],[13.78,4142],[16.89,4432],[20.9,4722],[24.56,5011],[29.16,5301],[34.16,5590],[39.27,5880],[45.98,6170],[52.83,6459],[59.34,6749],[67.32,7038],[75.27,7328],[84.7,7618],[95.05,7907],[105.33,8197],[116.88,8486],[128.97,8776],[144.01,9065],[160.02,9355],[178.18,9645],[200.55,9934],[227.3,10224],[255.54,10513],[286.15,10803],[320.07,11093],[366.04,11382],[444.05,11672],[539.61,11961],[632.15,12251],[722.21,12541],[809.29,12830],[898.66,13120],[994.84,13409],[1085.72,13699],[1165.48,13989],[1246.35,14278],[1336.4,14568],[1429.57,14857],[1535.26,15147],[1643.52,15436],[1738.1,15726],[1837.15,16016],[1956.02,16305],[2080.75,16595],[2200.6,16884],[2324.76,17174],[2454.14,17464],[2593.22,17753],[2754.73,18043],[2926.97,18332],[3100.71,18622],[3272.39,18912],[3444.76,19201],[3599.78,19491],[3755.11,19780],[3898.17,20070],[4041.25,20360],[4209.47,20649],[4407,20939],[4602.94,21228],[4791.85,21518],[4980.66,21807],[5186.84,22097],[5411.3,22387],[5634.12,22676],[5868.9,22966],[6108.68,23255],[6324.42,23545],[6537.98,23835],[6731.38,24124],[6936.22,24414],[7170.12,24703],[7438.78,24993],[7722.03,25283],[8052.71,25572],[8554.9,25862],[9170.7,26151],[9918.42,26441],[10766.05,26731],[11687.98,27020],[12770.53,27310],[14131.5,27599],[15705.72,27889],[18051.67,28178],[21726.69,28468],[26932.61,28758],[33777.32,29916],[43650.08,32409],[64210.67,34902],[122791.41,37395]];
 var allPoints;
-var yearSelected = "1820";
+var yearSelected = "1860";
 
+// var controller = new ScrollMagic.Controller();
 
 d3.csv("allpoints.csv", function(error, allPoints) {
-  d3.csv("line_paths.csv", function(error, borderPaths) {
+  d3.json("us.json", function(error, us) {
+    d3.csv("line_paths.csv", function(error, borderPaths) {
 
-  console.log(allPoints);
+  console.log(us);
 
   var xExtent = d3.extent(allPoints, function(d) { return +d.x });
   var yExtent = d3.extent(allPoints, function(d) { return +d.y });
+
+  allPoints = allPoints.filter(function(d){
+    var sectionOne = false;
+    if(+d.x < -112312 && +d.y > -61240){
+      sectionOne = true;
+    }
+    return +d.point_id > 0 && +d.total_1860 > 0 && +d.x > -519447 && !sectionOne;
+  })
+
+  //8427 - 8419
+
   // var popExtent = d3.extent(allPoints, function(d) { return +d.total_1860 });
   var dimScale = (yExtent[1]-yExtent[0])/(xExtent[1]-xExtent[0]);
 
@@ -33,8 +46,16 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var xMapScale = d3.scale.linear().domain(xExtent).range([0,width]);
   var yMapScale = d3.scale.linear().domain(yExtent).range([height,0]);
   var popScale = d3.scale.threshold().domain(popX).range(popY);
-  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.5]);
-  var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["rgb(117, 31, 255)","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"]);
+  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.8]).clamp(true);
+  // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["rgb(80, 31, 255)","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
+  // .interpolate(d3.interpolateHcl);
+
+  var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#431ad5","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
+  .interpolate(d3.interpolateHcl);
+
+  // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffae53","#ff5f07","#d60155","#8401a9"]);
+  // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffffb2","#fecc5c","#fd8d3c","#e31a1c"]);
+  // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#0c679c","#333333","#491e2a","#831937","#ac1640"]);
 
   var allPointsReMapped = [];
   for (var point in allPoints){
@@ -43,6 +64,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     var yReMap = yMapScale(+d.y);
     allPointsReMapped.push({
       x:xReMap,y:yReMap,
+      point_id:d.point_id,
       "1790":{
         total_pop:d.total_1790,
         slave_pop:d.slaves_1790
@@ -105,38 +127,77 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var svg = mapWrapper.select(".map-container")
     .attr("width","100%")
     .attr("height","100%")
-    .attr("viewBox","0 0 950 950")
+    .attr("viewBox","350 0 580 580")
     ;
 
+  var defs = svg.append("defs");
+
+    //Create wrapper for the voronoi clip paths
+  var clipWrapper = defs.append("g").attr("class", "clip-group-wrapper");
+
+  var filter = defs.append("filter")
+    .attr("width", "300%")
+    .attr("x", "-100%")
+    .attr("height", "300%")
+    .attr("y", "-100%")
+    .attr("id","glow");
+
+  filter.append("feGaussianBlur")
+    .attr("class", "blur")
+    .attr("stdDeviation","5")
+    .attr("result","coloredBlur");
+
+  var feMerge = filter.append("feMerge");
+  feMerge.append("feMergeNode")
+    .attr("in","coloredBlur");
+  feMerge.append("feMergeNode")
+    .attr("in","SourceGraphic");
+
+    //Blur for the royal leaders
+  var filterIntense = defs.append("filter")
+    .attr("width", "300%")
+    .attr("x", "-100%")
+    .attr("height", "300%")
+    .attr("y", "-100%")
+    .attr("id","glow-intense");
+
+  filterIntense.append("feGaussianBlur")
+    .attr("class", "blur")
+    .attr("stdDeviation","3")
+    .attr("result","coloredBlur");
+
   function adjustCircles(){
+
+    // svg.selectAll(".map-item")
+    //   .sort(function(a,b){
+    //     return a.r - b.r
+    //   })
+    //   ;
+
     circles
       .each(function(d){
-        d.former = d.r;
         d.r = getRadius(d);
-        return d.r != 0 || former != 0;
-      })
-      ;
-
-    svg.selectAll(".map-item")
-      .sort(function(a,b){
-        return a.r - b.r
-      })
-      ;
-
-    circles
-      .filter(function(d){
-        return d.former != 0 || d.r != 0;
       })
       .transition()
-      .duration(0)
+      .duration(function(d){
+        if(d.r>8){
+          return 1000;
+        }
+        return 0;
+      })
       .delay(function(d,i){
-        if(d.r>9){
-          return 100;
+        if(d.r>8){
+          return 0;
         }
         return d.r*1000;
       })
+      .style("stroke-width",function(d){
+        if(d.r>8){
+          return .75
+        }
+      })
       .attr("r",function(d){
-        return getRadius(d);
+        return d.r;
       })
       .attr("fill",function(d){
         return getColor(d);
@@ -186,11 +247,12 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       return +d.y;
     })
     .attr("r",function(d){
+      // return 4;
       return getRadius(d);
     })
-    .attr("stroke-width",function(d){
-      if(d.r>9){
-        return "1"
+    .style("stroke-width",function(d){
+      if(d.r>8){
+        return .75
       }
     })
     .attr("fill",function(d){
@@ -198,18 +260,57 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     })
     ;
 
-  var paths = svg
-    .selectAll("path")
-    .data(borderPaths)
-    .enter()
-    .append("path")
-    .attr("class","map-item map-path")
-    .attr("transform","translate(0,20) scale(1.1)")
-    .attr("d",function(d){
+  var remove = [2,4,6,8,20,27,30,31,32,35,38,40,46,49,56];
+
+  var object = {type:"GeometryCollection",geometries:us.objects.states.geometries.filter(function(d){
+    return remove.indexOf(d.id) == -1;
+  })}
+
+  var paths = svg.append("path")
+    .datum(topojson.mesh(us, object, function(a, b) {
+      return a !== b;
+    }))
+    .attr("class","map-path map-item")
+    .attr("transform","translate(-115,-15) scale(1.2)")
+    .each(function(d){
       d.r = 8;
-      return "M "+d.line;
     })
+    .attr("d", d3.geo.path())
+    // .attr("stroke","#0a061b")
+    // .attr("stroke-width",1.5)
+    // .attr("fill","none")
     ;
+
+
+  // var paths = svg
+  //   .selectAll("map-path")
+  //   .data(borderPaths)
+  //   .enter()
+  //   .append("path")
+  //   .attr("class","map-item map-path")
+  //   .attr("transform","translate(0,20) scale(1.1)")
+  //   .attr("d",function(d){
+  //     d.r = 8;
+  //     return "M "+d.line;
+  //   })
+  //   .attr("stroke","#fff")
+  //   .attr("stroke-width",1.5)
+  //   .attr("fill","none")
+  //   ;
+
+
+  // var paths = svg
+  //   .selectAll("map-path-two")
+  //   .data(borderPaths)
+  //   .enter()
+  //   .append("path")
+  //   .attr("class","map-item map-path-two")
+  //   .attr("transform","translate(0,20) scale(1.1)")
+  //   .attr("d",function(d){
+  //     d.r = 8;
+  //     return "M "+d.line;
+  //   })
+  //   ;
 
   svg.selectAll(".map-item")
     .sort(function(a,b){
@@ -217,6 +318,20 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     })
     ;
 
+  // var pinSampleGrid = new ScrollMagic.Scene({
+  //     // triggerElement: ".third-chart-wrapper",
+  //     triggerElement: ".map-wrapper",
+  //     triggerHook:0,
+  //     offset: 0
+  //   })
+  //   // .addIndicators({name: "pin 3 chart"}) // add indicators (requires plugin)
+  //   .setPin(".map-wrapper", {pushFollowers: false})
+  //   .addTo(controller)
+  //   ;
+
+
+//us.json
+});
 //line_paths.csv
 });
 //allpoints.csv
