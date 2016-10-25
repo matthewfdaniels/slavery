@@ -2,6 +2,9 @@ var bins=[[.48,1247],[1.09,1536],[1.6,1826],[2.53,2115],[4.16,2405],[5.69,2694],
 var allPoints;
 var yearSelected = "1860";
 
+var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
 // var controller = new ScrollMagic.Controller();
 
 d3.csv("allpoints.csv", function(error, allPoints) {
@@ -26,7 +29,9 @@ d3.csv("allpoints.csv", function(error, allPoints) {
 
   var margin = {top: 0, right: 0, bottom: 0, left:0},
       width = 460.5718*2 - margin.left - margin.right,
-      height = width*dimScale - margin.top - margin.bottom;
+      height = width*dimScale;
+
+  console.log(width,height);
 
   // left: -513210
   // right: 2538264
@@ -54,6 +59,8 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffae53","#ff5f07","#d60155","#8401a9"]);
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffffb2","#fecc5c","#fd8d3c","#e31a1c"]);
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#0c679c","#333333","#491e2a","#831937","#ac1640"]);
+
+  console.log();
 
   var allPointsReMapped = [];
   for (var point in allPoints){
@@ -103,6 +110,8 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   }
 
   var mapWrapper = d3.select(".map-wrapper")
+    .style("height",viewportHeight-200+"px")
+    .style("width",Math.min(viewportHeight-140,550)+"px")
     ;
 
   var menu = mapWrapper
@@ -244,11 +253,90 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     return color;
   }
 
+  function makeLegends(){
+    var slaveryLegend = d3.select(".slavery-legend");
+    var populationLegend = d3.select(".population-legend");
+
+    var slaveryLegendItem = slaveryLegend.selectAll("div")
+      .data(colorGradient.domain())
+      .enter()
+      .append("div")
+      .attr("class","slavery-legend-item")
+      ;
+
+    slaveryLegendItem.append("div")
+      .attr("class","slavery-legend-circle")
+      .style("background-color",function(d){
+        return colorGradient(d);
+      })
+      ;
+
+    slaveryLegendItem.append("p")
+      .attr("class","slavery-legend-text")
+      .style("color",function(d){
+        return colorGradient(d);
+      })
+      .html(function(d,i){
+        if(i==0){
+          return "0%"
+        }
+        return Math.round(d*100)+"%";
+      })
+      ;
+
+    var popInterpolate = ["100","1k","50k","1m+"]
+
+    var populationLegendItem = populationLegend.selectAll("div")
+      .data([100,1000,50000,1000000])
+      .enter()
+      .append("div")
+      .attr("class","population-legend-item")
+      ;
+
+    populationLegendItem.append("div")
+      .attr("class","population-legend-circle")
+      .style("width",function(d,i){
+        if(i==0){
+          return "1px"
+        }
+        if(i==3){
+          return "18px"
+        }
+        return 2*diameterAdjust(popScale(d))+"px";
+      })
+      .style("height",function(d,i){
+        if(i==0){
+          return "1px"
+        }
+        if(i==3){
+          return "18px"
+        }
+        return 2*diameterAdjust(popScale(d))+"px";
+      })
+      ;
+
+    populationLegendItem.append("p")
+      .attr("class","population-legend-text")
+      .html(function(d,i){
+        return popInterpolate[i];
+      })
+      ;
+
+
+
+  }
+
+  makeLegends();
+
   allPointsReMapped = allPointsReMapped.filter(function(d){
     return getRadius(d) > 0;
   })
 
-  var circles = svg
+  var slaveryMapContainer = svg.append("g")
+    .attr("transform","translate("+margin.left+","+margin.top+")")
+    ;
+
+  var circles = slaveryMapContainer
     .selectAll("circle")
     .data(allPointsReMapped)
     .enter()
@@ -286,7 +374,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     return remove.indexOf(d.id) == -1;
   })}
 
-  var paths = svg.append("path")
+  var paths = slaveryMapContainer.append("path")
     .datum(topojson.mesh(us, object, function(a, b) {
       return a !== b;
     }))
@@ -305,38 +393,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     // .attr("fill","none")
     ;
 
-  //
-  // var paths = svg
-  //   .selectAll("map-path")
-  //   .data(borderPaths)
-  //   .enter()
-  //   .append("path")
-  //   .attr("class","map-item map-path")
-  //   .attr("transform","translate(0,20) scale(1.1)")
-  //   .attr("d",function(d){
-  //     d.r = 8;
-  //     return "M "+d.line;
-  //   })
-  //   .attr("stroke","#fff")
-  //   .attr("stroke-width",1.5)
-  //   .attr("fill","none")
-  //   ;
-
-
-  // var paths = svg
-  //   .selectAll("map-path-two")
-  //   .data(borderPaths)
-  //   .enter()
-  //   .append("path")
-  //   .attr("class","map-item map-path-two")
-  //   .attr("transform","translate(0,20) scale(1.1)")
-  //   .attr("d",function(d){
-  //     d.r = 8;
-  //     return "M "+d.line;
-  //   })
-  //   ;
-
-  svg.selectAll(".map-item")
+  slaveryMapContainer.selectAll(".map-item")
     .sort(function(a,b){
       return a.r - b.r
     })
