@@ -8,8 +8,6 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   d3.json("us.json", function(error, us) {
     d3.csv("line_paths.csv", function(error, borderPaths) {
 
-  console.log(us);
-
   var xExtent = d3.extent(allPoints, function(d) { return +d.x });
   var yExtent = d3.extent(allPoints, function(d) { return +d.y });
 
@@ -18,7 +16,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     if(+d.x < -112312 && +d.y > -61240){
       sectionOne = true;
     }
-    return +d.point_id > 0 && +d.total_1860 > 0 && +d.x > -519447 && !sectionOne;
+    return +d.total_1860 > 0 && +d.x > -519447 && !sectionOne;
   })
 
   //8427 - 8419
@@ -46,11 +44,11 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var xMapScale = d3.scale.linear().domain(xExtent).range([0,width]);
   var yMapScale = d3.scale.linear().domain(yExtent).range([height,0]);
   var popScale = d3.scale.threshold().domain(popX).range(popY);
-  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.8]).clamp(true);
+  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.7]).clamp(true);
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["rgb(80, 31, 255)","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
   // .interpolate(d3.interpolateHcl);
-
-  var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#431ad5","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
+  // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#431ad5","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
+  var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#194abf","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
   .interpolate(d3.interpolateHcl);
 
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffae53","#ff5f07","#d60155","#8401a9"]);
@@ -199,6 +197,18 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       .attr("r",function(d){
         return d.r;
       })
+      .attr("stroke-width",function(d){
+        if(d.r>8){
+          return .75
+        }
+        return null;
+      })
+      .attr("stroke",function(d){
+        if(d.r>8){
+          return "#0a061b";
+        }
+        return null;
+      })
       .attr("fill",function(d){
         return getColor(d);
       })
@@ -234,6 +244,10 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     return color;
   }
 
+  allPointsReMapped = allPointsReMapped.filter(function(d){
+    return getRadius(d) > 0;
+  })
+
   var circles = svg
     .selectAll("circle")
     .data(allPointsReMapped)
@@ -241,19 +255,25 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     .append("circle")
     .attr("class","map-point map-item")
     .attr("cx",function(d){
-      return +d.x;
+      return +d.x.toFixed(2);
     })
     .attr("cy",function(d){
-      return +d.y;
+      return +d.y.toFixed(2);
     })
     .attr("r",function(d){
-      // return 4;
-      return getRadius(d);
+      return d.r.toFixed(2);
     })
-    .style("stroke-width",function(d){
+    .attr("stroke-width",function(d){
       if(d.r>8){
         return .75
       }
+      return null;
+    })
+    .attr("stroke",function(d){
+      if(d.r>8){
+        return "#0a061b";
+      }
+      return null;
     })
     .attr("fill",function(d){
       return getColor(d);
@@ -275,13 +295,17 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     .each(function(d){
       d.r = 8;
     })
+    .attr("stroke",function(d){
+      return "#0a061b";
+    })
+    .attr("fill","none")
     .attr("d", d3.geo.path())
     // .attr("stroke","#0a061b")
-    // .attr("stroke-width",1.5)
+    .attr("stroke-width",1)
     // .attr("fill","none")
     ;
 
-
+  //
   // var paths = svg
   //   .selectAll("map-path")
   //   .data(borderPaths)
