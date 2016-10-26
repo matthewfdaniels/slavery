@@ -120,49 +120,6 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     .attr("width","100%")
     .attr("height","100%")
     .attr("viewBox","350 0 580 580")
-
-    .on("mousemove",function(d){
-      var coor = d3.mouse(this);
-      var x2 = coor[0].toFixed(2);
-      var y2 = coor[1].toFixed(2);
-      var totalSlaves = 0;
-      var totalPeople = 0;
-      statePaths.style("stroke",function(d){
-        var x = (x2)/1.2+115/1.2;
-        var y = (y2)/1.2+15/1.2;
-
-        var box = d3.select(this).node().getBBox();
-        var bb = {x1:box.x,x2:box.x+box.width,y1:box.y,y2:box.y+box.height};
-        if( bb.x1 < x && bb.x2 > x && bb.y1 < y && bb.y2 > y) {
-          return "white";
-        }
-        return null;
-      })
-
-      circles.style("opacity",function(d,i){
-        var x1 = +d.x;
-        var y1 = +d.y;
-        var distance = Math.sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) );
-        if(distance<50){
-          var totalPop = +d[yearSelected].total_pop;
-          var slavePop = +d[yearSelected].slave_pop;
-          totalPeople = totalPop+totalPeople;
-          totalSlaves = slavePop+totalSlaves;
-          return "1"
-        }
-        return ".5";
-      })
-      var slavePercent = totalSlaves/totalPeople;
-
-      slaveryYear.text(Math.round(slavePercent*100)+"%");
-
-    })
-    .on("mouseout",function(d){
-      statePaths.style("stroke",null);
-
-      circles.style("opacity",1)
-      ;
-    })
     ;
 
   var defs = svg.append("defs");
@@ -442,7 +399,6 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     return remove.indexOf(d.id) == -1;
   })}
 
-
   var usStates = topojson.feature(us,object).features;
 
   function inside(point, vs) {
@@ -467,50 +423,75 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var testArray;
   var restoredDataset = [];
 
+  var slaveryToolTip = svg.append("g")
+    .attr("class", "slavery-tooltip")
+
+  slaveryToolTipText = slaveryToolTip.append("text")
+    .attr("class", "slavery-tooltip-text")
+    .attr("text-anchor","middle")
+    .text("hi")
+    ;
+
+  var usPath = svg.append("g")
+    .attr("class", "slavery-us-border")
+    .append("path")
+    .datum(topojson.feature(us, us.objects.land))
+    .attr("d", d3.geo.path())
+    .attr("transform","translate(-115,-15) scale(1.2)")
+    .on("mousemove",function(d){
+
+      var coor = d3.mouse(this);
+      var x2 = coor[0].toFixed(2)*1.2-115;
+      var y2 = coor[1].toFixed(2)*1.2-15;
+
+      slaveryToolTip.attr("transform","translate("+x2+","+(+y2 - 75)+")")
+
+      var totalSlaves = 0;
+      var totalPeople = 0;
+      statePaths.style("stroke",function(d){
+        var x = x2/1.2 + 115/1.2;
+        var y = y2/1.2 + 15/1.2;
+
+        var box = d3.select(this).node().getBBox();
+        var bb = {x1:box.x,x2:box.x+box.width,y1:box.y,y2:box.y+box.height};
+        if( bb.x1 < x && bb.x2 > x && bb.y1 < y && bb.y2 > y) {
+          return "white";
+        }
+        return null;
+      })
+
+      circles.style("opacity",function(d,i){
+        var x1 = +d.x;
+        var y1 = +d.y;
+        var distance = Math.sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) );
+        if(distance<50){
+          var totalPop = +d[yearSelected].total_pop;
+          var slavePop = +d[yearSelected].slave_pop;
+          totalPeople = totalPop+totalPeople;
+          totalSlaves = slavePop+totalSlaves;
+          return "1"
+        }
+        return ".5";
+      })
+      var slavePercent = totalSlaves/totalPeople;
+      slaveryToolTipText.text("Population is "+Math.round(slavePercent*100)+"% Slaves");
+    })
+    .on("mouseout",function(d){
+      statePaths.style("stroke",null);
+      circles.style("opacity",1);
+      slaveryToolTipText.text("");
+      ;
+    })
+    ;
+
   var statePaths = svg.append("g")
     .selectAll("path")
     .data(usStates)
     .enter()
     .append("path")
-    .each(function(d){
-      var thing = d3.geo.path("Polygon")
-      d.thing = thing(d);
-    })
     .attr("transform","translate(-115,-15) scale(1.2)")
-    .attr("d",d3.geo.path("LineString"))
+    .attr("d",d3.geo.path())
     .attr("class","state-path")
-    .on("mouseover",function(d){
-
-      // var pathSegList = d3.select(this).node().pathSegList._list;
-      // // console.log(pathSegList);
-      // restoredDataset = [];
-      // // loop through segments, adding each endpoint to the restored dataset
-      // for (var i = 0; i < pathSegList.length; i++) {
-      //   var x = pathSegList[i].x;
-      //   var y = pathSegList[i].y;
-      //
-      //   if(x&&y){
-      //     restoredDataset.push([x,y])
-      //   }
-      //
-      // }
-      // // var here = inside([ 1, 4 ], restoredDataset);
-      //
-      // // console.log(here);
-      //
-      // // circles.attr("fill",function(d,i){
-      // //   var x = +d.x.toFixed(2);
-      // //   var y = +d.y.toFixed(2);
-      // //   var d = Math.sqrt( (x-x2)*(x-x2) + (y1-y2)*(y1-y2) );
-      // //   // if(inside([ x, y ], restoredDataset)){
-      // //   //   return "red"
-      // //   // }
-      // //   // return "green";
-      // // })
-    })
-    // .on("mousemove",function(d){
-    //   // console.log(thing);
-    // })
     ;
   //
 
