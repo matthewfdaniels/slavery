@@ -4,6 +4,8 @@ var yearSelected = "1860";
 
 var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
 var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+var chapterItemes = d3.selectAll(".chapter-item");
+var slaveryYear = d3.select(".year-row-year");
 
 // var controller = new ScrollMagic.Controller();
 
@@ -49,12 +51,12 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var xMapScale = d3.scale.linear().domain(xExtent).range([0,width]);
   var yMapScale = d3.scale.linear().domain(yExtent).range([height,0]);
   var popScale = d3.scale.threshold().domain(popX).range(popY);
-  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.7]).clamp(true);
+  var diameterAdjust = d3.scale.linear().domain([1247,37395]).range([.2,3.7]).clamp(false);
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["rgb(80, 31, 255)","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
   // .interpolate(d3.interpolateHcl);
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#431ad5","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
   var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#194abf","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
-  .interpolate(d3.interpolateHcl);
+    .interpolate(d3.interpolateHcl);
 
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffae53","#ff5f07","#d60155","#8401a9"]);
   // var colorGradient = d3.scale.linear().domain([.000000000001,.2375,.475,.7125,.95]).range(["#c5c5c5","#ffffb2","#fecc5c","#fd8d3c","#e31a1c"]);
@@ -111,30 +113,56 @@ d3.csv("allpoints.csv", function(error, allPoints) {
 
   var mapWrapper = d3.select(".map-wrapper")
     .style("height",viewportHeight-200+"px")
-    .style("width",Math.min(viewportHeight-140,550)+"px")
-    ;
-
-  var menu = mapWrapper
-    .append("div")
-    .attr("class","menu-test")
-    .selectAll("p")
-    .data(["1790","1800","1810","1820","1830","1840","1850","1860","1870"])
-    .enter()
-    .append("p")
-    .attr("class","menu-item")
-    .text(function(d){
-      return d;
-    })
-    .on("click",function(d){
-      yearSelected = d;
-      adjustCircles();
-    })
+    .style("width",Math.min(viewportHeight-200,550)+"px")
     ;
 
   var svg = mapWrapper.select(".map-container")
     .attr("width","100%")
     .attr("height","100%")
     .attr("viewBox","350 0 580 580")
+
+    .on("mousemove",function(d){
+      var coor = d3.mouse(this);
+      var x2 = coor[0].toFixed(2);
+      var y2 = coor[1].toFixed(2);
+      var totalSlaves = 0;
+      var totalPeople = 0;
+      statePaths.style("stroke",function(d){
+        var x = (x2)/1.2+115/1.2;
+        var y = (y2)/1.2+15/1.2;
+
+        var box = d3.select(this).node().getBBox();
+        var bb = {x1:box.x,x2:box.x+box.width,y1:box.y,y2:box.y+box.height};
+        if( bb.x1 < x && bb.x2 > x && bb.y1 < y && bb.y2 > y) {
+          return "white";
+        }
+        return null;
+      })
+
+      circles.style("opacity",function(d,i){
+        var x1 = +d.x;
+        var y1 = +d.y;
+        var distance = Math.sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) );
+        if(distance<50){
+          var totalPop = +d[yearSelected].total_pop;
+          var slavePop = +d[yearSelected].slave_pop;
+          totalPeople = totalPop+totalPeople;
+          totalSlaves = slavePop+totalSlaves;
+          return "1"
+        }
+        return ".5";
+      })
+      var slavePercent = totalSlaves/totalPeople;
+
+      slaveryYear.text(Math.round(slavePercent*100)+"%");
+
+    })
+    .on("mouseout",function(d){
+      statePaths.style("stroke",null);
+
+      circles.style("opacity",1)
+      ;
+    })
     ;
 
   var defs = svg.append("defs");
@@ -173,7 +201,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     .attr("stdDeviation","3")
     .attr("result","coloredBlur");
 
-  function adjustCircles(){
+  function adjustCircles(duration){
 
     // svg.selectAll(".map-item")
     //   .sort(function(a,b){
@@ -184,36 +212,31 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     circles
       .each(function(d){
         d.r = getRadius(d);
+        // d.r = Math.random();
       })
       .transition()
       .duration(function(d){
-        if(d.r>8){
-          return 1000;
+        if(d.r>3.7){
+          return duration;
         }
         return 0;
       })
       .delay(function(d,i){
-        if(d.r>8){
+        if(d.r>3.7){
           return 0;
         }
-        return d.r*1000;
+        return d.r*duration;
       })
       .style("stroke-width",function(d){
-        if(d.r>8){
+        if(d.r>3.7){
           return .75
         }
       })
       .attr("r",function(d){
         return d.r;
       })
-      .attr("stroke-width",function(d){
-        if(d.r>8){
-          return .75
-        }
-        return null;
-      })
       .attr("stroke",function(d){
-        if(d.r>8){
+        if(d.r>3.7){
           return "#0a061b";
         }
         return null;
@@ -225,11 +248,12 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   }
 
   function getRadius(d){
+
     if(d[yearSelected].total_pop == ""){
       d.r = 0;
     }
     else if (+d[yearSelected].total_pop > 122791.41) {
-      d.r = 10;
+      d.r = diameterAdjust(31163 * Math.sqrt(d[yearSelected].total_pop/125000));
     }
     else {
       d.r = diameterAdjust(popScale(d[yearSelected].total_pop));
@@ -284,7 +308,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       })
       ;
 
-    var popInterpolate = ["100","1k","50k","1m+"]
+    var popInterpolate = ["100","1K","50K","1M+"]
 
     var populationLegendItem = populationLegend.selectAll("div")
       .data([100,1000,50000,1000000])
@@ -325,15 +349,59 @@ d3.csv("allpoints.csv", function(error, allPoints) {
 
 
   }
+  function makeNavigation(){
+
+      chapterItemes
+        .on("click",function(){
+          slaveryYear.text(yearSelected);
+          var change = d3.select(this).text();
+          var currentYear = +slaveryYear.text();
+          var delta = Math.abs(currentYear - change)*10;
+
+          function changeYear(){
+            if(change<currentYear){
+              currentYear = currentYear - 1;
+            }
+            else{
+              currentYear = currentYear + 1;
+            }
+
+            slaveryYear
+              .text(currentYear)
+              .transition()
+              .duration(25)
+              .each("end",function(d){
+                if(change!=currentYear){
+                  changeYear();
+                }
+              })
+              ;
+          }
+          changeYear();
+
+          chapterItemes.classed("chapter-selected",function(d){
+            if(d3.select(this).text()==change){
+              return true;
+            }
+            return false;
+          })
+
+          yearSelected = +change;
+          adjustCircles(delta);
+        })
+        ;
+  }
+
 
   makeLegends();
-
+  makeNavigation();
   allPointsReMapped = allPointsReMapped.filter(function(d){
     return getRadius(d) > 0;
   })
 
   var slaveryMapContainer = svg.append("g")
     .attr("transform","translate("+margin.left+","+margin.top+")")
+    // .style("pointer-events","all")
     ;
 
   var circles = slaveryMapContainer
@@ -352,13 +420,13 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       return d.r.toFixed(2);
     })
     .attr("stroke-width",function(d){
-      if(d.r>8){
+      if(d.r>3.7){
         return .75
       }
       return null;
     })
     .attr("stroke",function(d){
-      if(d.r>8){
+      if(d.r>3.7){
         return "#0a061b";
       }
       return null;
@@ -373,6 +441,78 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var object = {type:"GeometryCollection",geometries:us.objects.states.geometries.filter(function(d){
     return remove.indexOf(d.id) == -1;
   })}
+
+
+  var usStates = topojson.feature(us,object).features;
+
+  function inside(point, vs) {
+      // ray-casting algorithm based on
+      // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+
+      var x = point[0], y = point[1];
+
+      var inside = false;
+      for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+          var xi = vs[i][0], yi = vs[i][1];
+          var xj = vs[j][0], yj = vs[j][1];
+
+          var intersect = ((yi > y) != (yj > y))
+              && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+          if (intersect) inside = !inside;
+      }
+
+      return inside;
+  };
+
+  var testArray;
+  var restoredDataset = [];
+
+  var statePaths = svg.append("g")
+    .selectAll("path")
+    .data(usStates)
+    .enter()
+    .append("path")
+    .each(function(d){
+      var thing = d3.geo.path("Polygon")
+      d.thing = thing(d);
+    })
+    .attr("transform","translate(-115,-15) scale(1.2)")
+    .attr("d",d3.geo.path("LineString"))
+    .attr("class","state-path")
+    .on("mouseover",function(d){
+
+      // var pathSegList = d3.select(this).node().pathSegList._list;
+      // // console.log(pathSegList);
+      // restoredDataset = [];
+      // // loop through segments, adding each endpoint to the restored dataset
+      // for (var i = 0; i < pathSegList.length; i++) {
+      //   var x = pathSegList[i].x;
+      //   var y = pathSegList[i].y;
+      //
+      //   if(x&&y){
+      //     restoredDataset.push([x,y])
+      //   }
+      //
+      // }
+      // // var here = inside([ 1, 4 ], restoredDataset);
+      //
+      // // console.log(here);
+      //
+      // // circles.attr("fill",function(d,i){
+      // //   var x = +d.x.toFixed(2);
+      // //   var y = +d.y.toFixed(2);
+      // //   var d = Math.sqrt( (x-x2)*(x-x2) + (y1-y2)*(y1-y2) );
+      // //   // if(inside([ x, y ], restoredDataset)){
+      // //   //   return "red"
+      // //   // }
+      // //   // return "green";
+      // // })
+    })
+    // .on("mousemove",function(d){
+    //   // console.log(thing);
+    // })
+    ;
+  //
 
   var paths = slaveryMapContainer.append("path")
     .datum(topojson.mesh(us, object, function(a, b) {
