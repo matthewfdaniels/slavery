@@ -18,32 +18,131 @@
 
   <div class="wrapper">
     <div class="left-col">
-      <div class="slavery-container">
-        <div class="legend-row">
-          <div class="population-legend-container">
-            <p class="slavery-legend-title">Population
-            </p>
-            <div class="population-legend">
-            </div>
-          </div>
-          <div class="slavery-legend-container">
-            <p class="slavery-legend-title">Slaves % of Population
-            </p>
-            <div class="slavery-legend">
-            </div>
-          </div>
+      <div class="content-container">
 
-        </div>
-        <div class="map-wrapper">
-          <svg class="map-container">
-          </svg>
-        </div>
-        <div class="year-row">
-          <p class="year-row-sub-head">Slavery in
+        <div class="ui-boxes population-container">
+          <p class="start-label">Black Population Per Capita, 2010
           </p>
-          <p class="year-row-year">1790
-          </p>
+          <div class="ui-elements legend-row">
+            <div class="slavery-legend-container">
+              <p class="slavery-legend-title">Black % of Population
+              </p>
+              <div class="slavery-legend">
+              </div>
+            </div>
+            <div class="incarceration-legend-container">
+              <p class="slavery-legend-title">Incarceration Rate (Federal/State per 100K)
+              </p>
+              <div class="state-population-legend">
+              </div>
+            </div>
+          </div>
+          <div class="map-population-wrapper map-wrapper">
+            <svg class="map-population-container">
+            </svg>
+          </div>
+          <div class="ui-elements year-row">
+            <div class="black-population-container">
+              <p class="year-row-sub-head">Black Population in
+              </p>
+              <div class="year-container">
+                <p class="year-row-year front-curve">1910
+                </p>
+                <p class="year-row-year">1960
+                </p>
+                <p class="year-row-year year-row-selected back-curve">2010
+                </p>
+              </div>
+            </div>
+            <div class="admissions-container">
+              <p class="admissions-button-head">Incarceration Rate in <span class="year-selected-population">2010</span>
+              </p>
+              <div class="year-container">
+                <p class="front-curve admissions-button admissions-button-selected">OFF</p>
+                <p class="back-curve admissions-button">ON</p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div class="ui-boxes slavery-container">
+          <p class="start-label">Slavery, 1860
+          </p>
+          <div class="ui-elements legend-row">
+            <div class="population-legend-container">
+              <p class="slavery-legend-title">Population
+              </p>
+              <div class="population-legend">
+              </div>
+            </div>
+            <div class="slavery-legend-container">
+              <p class="slavery-legend-title">Slaves % of Population
+              </p>
+              <div class="slavery-legend">
+              </div>
+            </div>
+          </div>
+          <div class="map-wrapper">
+            <svg class="map-container">
+            </svg>
+          </div>
+          <div class="ui-elements year-row">
+            <p class="year-row-sub-head">Slavery in
+            </p>
+            <p class="year-row-year front-curve">1790
+            </p>
+            <p class="year-row-year">1800
+            </p>
+            <p class="year-row-year">1810
+            </p>
+            <p class="year-row-year">1820
+            </p>
+            <p class="year-row-year">1830
+            </p>
+            <p class="year-row-year">1840
+            </p>
+            <p class="year-row-year">1850
+            </p>
+            <p class="year-row-year year-row-selected back-curve">1860
+            </p>
+            <!-- <p class="year-row-year back-curve">1870
+            </p> -->
+          </div>
+        </div>
+
+        <div class="ui-boxes incarceration-container">
+          <p class="start-label">Jail Incarceration Rate, 2014
+          </p>
+          <div class="ui-elements legend-row">
+            <div class="slavery-legend-container">
+              <p class="slavery-legend-title">Jail Incarceration Rate (per 100K)
+              </p>
+              <div class="slavery-legend">
+              </div>
+            </div>
+          </div>
+          <div class="map-incarceration-wrapper map-wrapper">
+            <svg class="map-incarceration-container">
+            </svg>
+          </div>
+          <div class="ui-elements year-row">
+            <div class="black-population-container">
+              <p class="year-row-sub-head">Jail Incarceration Rate in
+              </p>
+              <div class="year-container">
+                <p class="year-row-year front-curve">1980
+                </p>
+                <p class="year-row-year">2000
+                </p>
+                <p class="year-row-year year-row-selected back-curve">2014
+                </p>
+                <p class="scale-note">Jail Incarceration was <u>much lower</u> in 1980. We've changed the color scale (see top legend) so that you can see the difference among states.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
       <div class="navigator">
         <a class="chapter chapter-selected chapter-item">1790
@@ -95,8 +194,9 @@
           </a>
         </div>
         <div class="title">
-          <a class="title-text">Present Patterns of Slavery
-          </a>
+          <p class="title-text-small">Patterns of</p>
+          <p class="title-text"> Slavery
+          </p>
         </div>
         <p class="by-lines">Slavery Data/Mapping: <a href="http://radicalcartography.net/slavery.html">Bill Rankin</a><br>Code/Story: <a href="http://twitter.com/matthew_daniels">Matt Daniels</a>
         </p>
@@ -112,6 +212,7 @@
   <script src="js/d3.min.js" type="text/javascript"></script>
   <script src="//d3js.org/topojson.v1.min.js"></script>
   <script src="script.js" type="text/javascript"></script>
+
 
 </body>
 </html>
