@@ -1,3 +1,4 @@
+var slaveZoomed = false;
 var bins=[[.48,1247],[1.09,1536],[1.6,1826],[2.53,2115],[4.16,2405],[5.69,2694],[6.94,2984],[8.15,3274],[9.75,3563],[11.73,3853],[13.78,4142],[16.89,4432],[20.9,4722],[24.56,5011],[29.16,5301],[34.16,5590],[39.27,5880],[45.98,6170],[52.83,6459],[59.34,6749],[67.32,7038],[75.27,7328],[84.7,7618],[95.05,7907],[105.33,8197],[116.88,8486],[128.97,8776],[144.01,9065],[160.02,9355],[178.18,9645],[200.55,9934],[227.3,10224],[255.54,10513],[286.15,10803],[320.07,11093],[366.04,11382],[444.05,11672],[539.61,11961],[632.15,12251],[722.21,12541],[809.29,12830],[898.66,13120],[994.84,13409],[1085.72,13699],[1165.48,13989],[1246.35,14278],[1336.4,14568],[1429.57,14857],[1535.26,15147],[1643.52,15436],[1738.1,15726],[1837.15,16016],[1956.02,16305],[2080.75,16595],[2200.6,16884],[2324.76,17174],[2454.14,17464],[2593.22,17753],[2754.73,18043],[2926.97,18332],[3100.71,18622],[3272.39,18912],[3444.76,19201],[3599.78,19491],[3755.11,19780],[3898.17,20070],[4041.25,20360],[4209.47,20649],[4407,20939],[4602.94,21228],[4791.85,21518],[4980.66,21807],[5186.84,22097],[5411.3,22387],[5634.12,22676],[5868.9,22966],[6108.68,23255],[6324.42,23545],[6537.98,23835],[6731.38,24124],[6936.22,24414],[7170.12,24703],[7438.78,24993],[7722.03,25283],[8052.71,25572],[8554.9,25862],[9170.7,26151],[9918.42,26441],[10766.05,26731],[11687.98,27020],[12770.53,27310],[14131.5,27599],[15705.72,27889],[18051.67,28178],[21726.69,28468],[26932.61,28758],[33777.32,29916],[43650.08,32409],[64210.67,34902],[122791.41,37395]];
 var allPoints;
 var yearSelected = "1860";
@@ -14,7 +15,9 @@ var chapterItemes = d3.selectAll(".chapter-item");
 var slaveryYear = d3.select(".year-row-year");
 var remove = [2,4,6,8,20,27,30,31,32,35,38,40,46,49,56];
 var scaleNote = d3.select(".scale-note");
-// var controller = new ScrollMagic.Controller();
+var navigatorElement = d3.select(".navigator");
+
+var controller = new ScrollMagic.Controller();
 
 d3.csv("allpoints.csv", function(error, allPoints) {
   d3.json("us.json", function(error, us) {
@@ -287,7 +290,10 @@ d3.csv("allpoints.csv", function(error, allPoints) {
 
       slaveryLegendItem.append("p")
         .attr("class","slavery-legend-text")
-        .style("color",function(d){
+        .style("color",function(d,i){
+          if(i==0){
+            return d3.rgb(colorGradient(d)).brighter([1.5]);
+          }
           return colorGradient(d);
         })
         .html(function(d,i){
@@ -509,12 +515,14 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     .clamp(true)
     ;
 
+  var colorGradientJailDomain = [200,600,1000,2000,30000];
+
   var colorGradientJail = d3.scale.linear()
   //1990
     // .domain([100,350,500,700,800]).range(["#194abf","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
   //2014
     //.domain([250,600,800,1200,1500]).range(["#194abf","rgb(166, 40, 126)","rgb(255, 85, 0)","rgb(242,206,206)","rgb(255,255,0)"])
-    .domain([250,700,1700,4000,10000]).range(colors)
+    .domain(colorGradientJailDomain).range(colors)
     .interpolate(d3.interpolateHcl)
     .clamp(true)
     ;
@@ -548,8 +556,6 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   })}
 
   var usStates = topojson.feature(us,object).features;
-
-
 
   var incarcerationCounties = incarcerationMapContainer.append("g")
     .attr("transform","translate(-115,-15) scale(1.2)")
@@ -812,6 +818,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
 
         var totalSlaves = 0;
         var totalPeople = 0;
+
         statePaths.style("stroke",function(d){
           var x = x2/1.2 + 115/1.2;
           var y = y2/1.2 + 15/1.2;
@@ -846,7 +853,9 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       }
     })
     .on("mouseout",function(d){
-      statePaths.style("stroke",null);
+      if(!slaveZoomed){
+        statePaths.style("stroke",null);
+      }
       circles.style("opacity",1);
       slaveryToolTipText.text("");
       ;
@@ -925,6 +934,9 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     uiBoxes.on("click",function(d){
       uiSelected = d;
       uiZoom(d);
+      if(uiSelected=="slavery"){
+        slaveryUnZoom();
+      }
     })
 
   }
@@ -966,7 +978,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       }
       return false;
     })
-    console.log(state);
+
     incarcerationCirclesContainer.style("display",function(){
       if(state){
         return null;
@@ -1009,9 +1021,9 @@ d3.csv("allpoints.csv", function(error, allPoints) {
         return false;
       });
 
-      var domains = {2000:[250,700,1700,4000,10000]
-          ,2014:[250,700,1700,4000,10000]
-          ,1980:[75,200,500,600,700]
+      var domains = {2000:colorGradientJailDomain
+          ,2014:colorGradientJailDomain
+          ,1980:colorGradientJailDomain//[75,200,500,600,700]
       };
 
       colorGradientJail.domain(domains[yearIncarcerationSelected]);
@@ -1170,6 +1182,47 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       ;
   }
 
+  function unZoom(){
+
+    startLabels
+      .style("visibility",null)
+      .style("top",null)
+      .style("left",null)
+      .style("font-size",null)
+      ;
+
+    uiElements
+      .transition()
+      .duration(500)
+      .style("opacity",0)
+      ;
+
+    uiBoxes.select(".map-wrapper").transition().duration(500).style("top","0px");
+
+    uiBoxes
+      .transition()
+      .duration(1000)
+      .style("width",contentContainerWidth/2+"px")
+      .style("height",contentContainerWidth/2+"px")
+      .style("top",function(d){
+        if(d=="incarceration"){
+          return (contentContainerWidth/2+heightPadding)+"px"
+        }
+        return (heightPadding)+"px";
+      })
+      .style("left",function(d){
+        if(d=="incarceration"){
+          return (contentContainerWidth-(contentContainerWidth/2))/2+"px";
+        }
+        if(d=="slavery"){
+          return null;
+        }
+        return contentContainerWidth/2+"px";
+      })
+      ;
+
+  }
+
   function uiZoom(chart){
 
     reduceLabels(chart);
@@ -1213,7 +1266,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
         if(d==chart){
           return "0px"
         }
-        iterate = iterate + 70;
+        iterate = iterate + 90;
         return viewportHeight-iterate+"px"
       })
       .style("left",function(d){
@@ -1226,9 +1279,158 @@ d3.csv("allpoints.csv", function(error, allPoints) {
 
   }
 
+  function slaveryUnZoom(){
+    slaveZoomed = false;
+
+    svg.transition().duration(750)
+      .attr("viewBox","350 0 580 580")
+      ;
+
+    statePaths
+      .style("stroke", null)
+      .style("stroke-width",null)
+      ;
+  }
+
+  function slaveryZoom(){
+
+    slaveZoomed = true;
+
+    svg.transition().duration(750)
+      .attr("viewBox","350 200 400 580")
+      ;
+
+    statePaths
+      .style("stroke",function(d){
+        if(+d.id==22){
+          return "white";
+        }
+        return null;
+      })
+      .style("stroke-width",function(d){
+        if(+d.id==22){
+          return "2px";
+        }
+        return null;
+      })
+      ;
+  }
+
   setupLayout();
   setupToggles();
   showStateBubbles(yearBubblesVisible);
+
+  var moveNavigator = new ScrollMagic.Scene({
+      // triggerElement: ".third-chart-wrapper",
+      triggerElement: ".slavery-trigger",
+      triggerHook:1,
+      offset: 0,
+      duration:500
+    })
+    .addIndicators({name: "slavery zoom"}) // add indicators (requires plugin)
+    .addTo(controller)
+    .on("enter",function(e){
+      if(e.target.controller().info("scrollDirection") == "REVERSE"){
+      }
+      else{
+        uiZoom("slavery");
+      }
+      ;
+    })
+    .on("leave",function(e){
+      if(e.target.controller().info("scrollDirection") == "FORWARD"){
+        navigatorElement.transition().duration(1000).style("right","0px");
+      }
+      else{
+        navigatorElement.transition().duration(1000).style("right","-162px");
+        unZoom();
+      }
+    })
+    ;
+
+  var zoomSlavery = new ScrollMagic.Scene({
+      // triggerElement: ".third-chart-wrapper",
+      triggerElement: ".zoom-trigger",
+      triggerHook:1,
+      offset: 0,
+      duration:300
+    })
+    .addIndicators({name: "zoom"}) // add indicators (requires plugin)
+    .addTo(controller)
+    .on("enter",function(e){
+      if(e.target.controller().info("scrollDirection") == "REVERSE"){
+      }
+      else{
+        slaveryZoom();
+      }
+      ;
+    })
+    .on("leave",function(e){
+      if(e.target.controller().info("scrollDirection") == "FORWARD"){
+        uiZoom("population");
+      }
+      else{
+        slaveryUnZoom();
+      }
+    })
+    ;
+
+  var zoomPopulation = new ScrollMagic.Scene({
+      // triggerElement: ".third-chart-wrapper",
+      triggerElement: ".black-pop-trigger",
+      triggerHook:1,
+      offset: 1,
+      duration:500
+    })
+    .addIndicators({name: "population"}) // add indicators (requires plugin)
+    .addTo(controller)
+    .on("enter",function(e){
+      if(e.target.controller().info("scrollDirection") == "REVERSE"){
+      }
+      else{
+        // slaveryUnZoom();
+      }
+      ;
+    })
+    .on("leave",function(e){
+      if(e.target.controller().info("scrollDirection") == "FORWARD"){
+        yearBubblesVisible = true;
+        showStateBubbles(yearBubblesVisible);
+      }
+      else{
+        yearBubblesVisible = false;
+        showStateBubbles(yearBubblesVisible);
+      }
+    })
+    ;
+
+  var zoomIncarceration = new ScrollMagic.Scene({
+      // triggerElement: ".third-chart-wrapper",
+      triggerElement: ".incar-trigger",
+      triggerHook:0,
+      offset: 0,
+      duration:100
+    })
+    .addIndicators({name: "incarceration"}) // add indicators (requires plugin)
+    .addTo(controller)
+    .on("enter",function(e){
+      if(e.target.controller().info("scrollDirection") == "REVERSE"){
+      }
+      else{
+        yearBubblesVisible = false;
+        showStateBubbles(yearBubblesVisible);
+        uiZoom("incarceration");
+      }
+      ;
+    })
+    .on("leave",function(e){
+      if(e.target.controller().info("scrollDirection") == "FORWARD"){
+      }
+      else{
+      }
+    })
+    ;
+
 //admissions.csv
 });
 //admissions.csv
