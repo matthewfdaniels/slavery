@@ -1327,7 +1327,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       offset: 0,
       duration:500
     })
-    // .addIndicators({name: "slavery zoom"}) // add indicators (requires plugin)
+    // .addIndicators({name: "slavery"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
@@ -1352,10 +1352,10 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       // triggerElement: ".third-chart-wrapper",
       triggerElement: ".zoom-trigger",
       triggerHook:1,
-      offset: 0,
+      offset: -150,
       duration:300
     })
-    // .addIndicators({name: "zoom"}) // add indicators (requires plugin)
+    // .addIndicators({name: "zoom lousiana"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
@@ -1367,7 +1367,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
     })
     .on("leave",function(e){
       if(e.target.controller().info("scrollDirection") == "FORWARD"){
-        uiZoom("population");
+        slaveryUnZoom();
       }
       else{
         slaveryUnZoom();
@@ -1388,19 +1388,38 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
       }
       else{
-        // slaveryUnZoom();
+        uiZoom("population")
       }
       ;
     })
     .on("leave",function(e){
       if(e.target.controller().info("scrollDirection") == "FORWARD"){
-        yearBubblesVisible = true;
-        showStateBubbles(yearBubblesVisible);
+        // yearBubblesVisible = true;
+        // showStateBubbles(yearBubblesVisible);
       }
       else{
-        yearBubblesVisible = false;
-        showStateBubbles(yearBubblesVisible);
+        // yearBubblesVisible = false;
+        // showStateBubbles(yearBubblesVisible);
       }
+    })
+    ;
+
+  var showBubbles = new ScrollMagic.Scene({
+      // triggerElement: ".third-chart-wrapper",
+      triggerElement: ".show-bubbles",
+      triggerHook:1,
+      offset: 0,
+      duration:500
+    })
+    // .addIndicators({name: "bubbles"}) // add indicators (requires plugin)
+    .addTo(controller)
+    .on("enter",function(e){
+      yearBubblesVisible = true;
+      showStateBubbles(yearBubblesVisible);
+    })
+    .on("leave",function(e){
+      yearBubblesVisible = false;
+      showStateBubbles(yearBubblesVisible);
     })
     ;
 
