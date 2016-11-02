@@ -1327,7 +1327,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       offset: 0,
       duration:500
     })
-    .addIndicators({name: "slavery zoom"}) // add indicators (requires plugin)
+    // .addIndicators({name: "slavery zoom"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
@@ -1355,7 +1355,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       offset: 0,
       duration:300
     })
-    .addIndicators({name: "zoom"}) // add indicators (requires plugin)
+    // .addIndicators({name: "zoom"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
@@ -1382,7 +1382,7 @@ d3.csv("allpoints.csv", function(error, allPoints) {
       offset: 1,
       duration:500
     })
-    .addIndicators({name: "population"}) // add indicators (requires plugin)
+    // .addIndicators({name: "population"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
@@ -1407,11 +1407,11 @@ d3.csv("allpoints.csv", function(error, allPoints) {
   var zoomIncarceration = new ScrollMagic.Scene({
       // triggerElement: ".third-chart-wrapper",
       triggerElement: ".incar-trigger",
-      triggerHook:0,
+      triggerHook:1,
       offset: 0,
       duration:100
     })
-    .addIndicators({name: "incarceration"}) // add indicators (requires plugin)
+    // .addIndicators({name: "incarceration"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(e.target.controller().info("scrollDirection") == "REVERSE"){
