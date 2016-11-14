@@ -24,3 +24,60 @@ left: -513210
 right: 2538264
 top: 2048594
 bottom: -1595224
+
+
+//black_scatter.csv
+
+select a.*,b.*
+from(
+select blackm,blackf,state,stateid,year,CUSTOTM,CUSTOTF,JURTOTM,JURTOTF,TOTRACEM,TOTRACEF
+from nps
+where year = 2010
+) a
+left join (
+select trim(leading "0" from GEO_state) as state,SF1_P0120002 as total_male, SF1_P0120026 as total_female, SF1_P012B002 as black_male, SF1_P012B026 as black_female
+from black_pop_2010
+) b
+on a.stateid = b.state
+/* where a.state < 56
+and a.state not in (2,4,6,8,20,27,30,31,32,35,38,40,46,49,56) */
+
+//aggregate_jail.csv
+select county,jail_2000,jail_1990,jail_1970,jail_1980,cast(jail_2014 as unsigned) as jail_2014
+from (
+select a.*, cast(left(b.fips,2) as unsigned) as state
+from jail a
+left join upshot_admissions b
+on a.county = b.fips_formatted
+) c
+/* where state not in (2,4,6,8,20,27,30,31,32,35,38,40,46,49,56) */
+order by 1
+
+//aggregate_admissions.csv
+
+/* select trim(LEADING "0" from fips) as fips, ROUND(admitsPer10k2006,2) AS ad_2006,ROUND(admitsPer10k2013,2) as ad_2013,ROUND(admitsPer10k2014,2) as ad_2014,state
+from upshot_admissions
+/* where trim(leading "0" from left(fips,2)) not in (2,4,6,8,20,27,30,31,32,35,38,40,46,49,56) */
+
+
+//create aggregate_population table, make sure 1910 uses concat of state and county, then output as aggregate_population.csv by export of whole table
+update aggregated_population c
+left join (
+select a.county,black_pop,total_pop from
+(
+select
+CAST(TRIM(LEADING '0' FROM CONCAT(LEFT(Geo_STATE,2),TRIM(TRAILING '0' FROM Geo_COUNTY))) AS UNSIGNED) as county /* for 1910 */
+/* cast(TRIM(LEADING '0' FROM TRIM(TRAILING '0' FROM Geo_FIPS)) as unsigned) as county */
+/*,TRIM(LEADING '0' from left(Geo_FIPS,2)) as state */
+,SE_T009_003 as black_pop
+, SE_T009_001 as total_pop
+from pop_1910
+where SE_T009_001 > 0
+/* HAVING state not in (2,4,6,8,20,27,30,31,32,35,38,40,46,49,56,72) */
+order by 1
+) a
+/* having county < 75000 and county > 999 */
+order by 1
+) b
+on c.county = b.county
+set c.black_pop_1910 = black_pop
