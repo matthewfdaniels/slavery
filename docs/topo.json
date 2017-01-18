@@ -1,0 +1,546 @@
+// waits for things to load
+d3.queue()
+  .defer(d3.json, 'json/us.json')
+  .defer(d3.csv, 'csv/population.csv')
+  .defer(d3.csv, 'csv/county_names.csv')
+  .defer(d3.csv, 'csv/ids_joined_with_location_categories.csv')
+  .defer(d3.csv, 'csv/title2.csv')
+  .defer(d3.csv, 'csv/blurb2.csv')
+  .defer(d3.csv, 'csv/markets/county_code_markets.csv')
+  .await(ready);
+
+function ready(error, topology, population, names, categories, titles, blurbs, markets) {
+  if (error) throw error;
+
+
+  var countyToMarketMap = d3.map(
+    d3.nest()
+    .key(function(d) {
+      return d.county_code;
+    })
+    .rollup(function(leaves) {
+      return leaves[0].market_area;
+    })
+    .entries(markets),
+    function(d) {
+      return d.key;
+    });
+  var marketToCountiesMap = d3.map(
+    d3.nest()
+    .key(function(d) {
+      return d.market_area;
+    })
+    .rollup(function(leaves) {
+      return leaves.map(function(d) {
+        return d.county_code;
+      });
+    })
+    .entries(markets),
+    function(d) {
+      return d.key;
+    });
+  console.log(marketToCountiesMap);
+
+
+
+  /************
+   * DOCUMENT *
+   ************/
+
+  var width = 960;
+  var height = 500;
+
+  var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  // a projection of the US + AK + HI
+  var projection = d3.geoAlbersUsa() // definitely necessary for d3v4
+    .scale(1050)
+    .translate([width / 2, height / 2]);
+  // set path to draw according to projection
+  var path = d3.geoPath().projection(projection);
+  // an ordinal scale of 7 related colors
+  // var colorScale = d3.scaleOrdinal().domain([0, 1]).range(['#edf8fb', '#ccece6', '#99d8c9', '#66c2a4', '#41ae76', '#238b45', '#005824']);
+  var colorScale = d3.scalePow().exponent(.4).domain([0, 1]).range(['#dddddd', '#ff0000']);
+  // var opacityScale = d3.scalePow().exponent(.4).domain([0, 8000]).range([.3, 1]).clamp(true);
+  var tooltip = floatingTooltip('county_tooltip', 240);
+  // boolean marker for state-level viz
+  /********
+   * DATA *
+   ********/
+
+  // nest county joins by county code
+  var nestedCodes = d3.nest()
+    .key(function(d) {
+      return d.county_code;
+    })
+    .entries(categories);
+
+
+  // nest county names, etc
+  var nestedNames = d3.nest()
+    .key(function(d) {
+      return d.county_code;
+    })
+    .rollup(function(leaves) {
+      // each county_code is unique, so you can map to the first value
+      // of the array of objects associated with it.
+      // this allows accessing elements without indexing into an array
+      return leaves[0];
+    })
+    .entries(names);
+
+  // nest category joins by category
+  var nestedCats = d3.nest()
+    .key(function(d) {
+      return d.parent_category;
+    })
+    .rollup(function(leaves) {
+      var leafNest = d3.nest()
+        .key(function(d) {
+          return d.county_code;
+        })
+        .entries(leaves);
+      return d3.map(leafNest, function(d) {
+        return d.key;
+      });
+    })
+    .entries(categories);
+
+  var titleNest = d3.nest()
+    .key(function(d) {
+      return d.project_id;
+    })
+    .rollup(function(leaves) {
+      return leaves[0]['project_title'];
+    })
+    .entries(titles);
+
+  var blurbNest = d3.nest()
+    .key(function(d) {
+      return d.project_id;
+    })
+    .rollup(function(leaves) {
+      return leaves[0]['blurb'];
+    })
+    .entries(blurbs);
+
+
+  // create a map for county codes (on code)
+  var allCategoriesMap = d3.map(nestedCodes, function(d) {
+    return d.key;
+  });
+  // create a map of populations (on county code)
+  var popMap = d3.map(population, function(d) {
+    return d.county_code;
+  });
+  // map the nest by key/county_code
+  var nameMap = d3.map(nestedNames, function(d) {
+    return d.key;
+  });
+  var categoriesMap = d3.map(nestedCats, function(d) {
+    return d.key;
+  });
+  var titleMap = d3.map(titleNest, function(d) {
+    return d.key;
+  });
+  var blurbMap = d3.map(blurbNest, function(d) {
+    return d.key;
+  });
+
+  // var nestedStates = d3.nest()
+  //   .key(function(d) {
+  //     return stateMap.get(d.county_code).value;
+  //   })
+  //   .entries(categories);
+  //
+  // var allCategoriesStateMap = d3.map(nestedStates, function(d) {
+  //   return d.key;
+  // });
+  //
+  //
+  // var nestedStateCats = d3.nest()
+  //   .key(function(d) {
+  //     return d.parent_category;
+  //   })
+  //   .rollup(function(leaves) {
+  //     var leafNest = d3.nest()
+  //       .key(function(d) {
+  //         return stateMap.get(d.county_code).value;
+  //       })
+  //       .entries(leaves);
+  //     return d3.map(leafNest, function(d) {
+  //       return d.key;
+  //     });
+  //   })
+  //   .entries(categories);
+  //
+  // var categoriesStateMap = d3.map(nestedStateCats, function(d) {
+  //   return d.key;
+  // });
+  //
+
+  // keep track of the current category map for tooltip
+  var currentCategoryMap = allCategoriesMap;
+  // create a map of per capita information
+  var perCapitaMap = mapPerCapita(allCategoriesMap);
+
+  var buttons = d3.select('.buttons');
+  // programmatically insert category buttons
+  categoriesMap.each(function(value, key) {
+    buttons.append('a')
+      .attr('href', '#')
+      .attr('id', key)
+      .classed('button', true)
+      .text(key)
+      .on('click', function(d) {
+        d3.select('.active').classed('active', false);
+        d3.select(this).classed('active', true);
+        selectCategory(key);
+      });
+  });
+  // do the same to the all categories button
+  d3.select('.active')
+    .on('click', function(d) {
+      d3.select('.active').classed('active', false);
+      d3.select(this).classed('active', true);
+      selectCategory('All');
+    });
+
+  /*******
+   * DOM *
+   *******/
+
+
+  /*
+   * Paths
+   */
+
+  var paths = svg.selectAll("path")
+    .data(topojson.feature(topology, topology.objects.counties).features)
+    .enter().append("path")
+    .attr("d", path)
+    .style('fill', function(d) {
+      var countyPerCapita = perCapitaMap.get(d.id);
+      if (countyPerCapita) {
+        return colorScale(perCapitaMap.get(d.id));
+      } else {
+        return colorScale(0);
+      }
+    })
+    .style('stroke', function(d) {
+      var countyPerCapita = perCapitaMap.get(d.id);
+      if (countyPerCapita) {
+        return colorScale(perCapitaMap.get(d.id));
+      } else {
+        return colorScale(0);
+      }
+    })
+    // .style('opacity', function(d) {
+    //   var code = currentCategoryMap.get(d.id);
+    //   if (code) {
+    //     return opacityScale(code.values.length);
+    //   } else {
+    //     return opacityScale(0);
+    //   }
+    // })
+    .attr('id', function(d) {
+      return d.id;
+    })
+    .on('mouseover', showDetail)
+    .on('mouseout', hideDetail)
+    .on('click', showProjects);
+
+  svg.insert("path", ".graticule")
+    .datum(topojson.mesh(topology, topology.objects.states, function(a, b) {
+      return a !== b;
+    }))
+    .attr("class", "state-boundary")
+    .attr("d", path);
+
+  svg.insert("path", ".graticule")
+    .datum(topojson.feature(topology, topology.objects.land))
+    .attr("class", "land")
+    .attr("d", path);
+
+  /*************
+   * FUNCTIONS *
+   *************/
+
+
+  function selectCategory(category) {
+
+    if (category === "All") {
+      currentCategoryMap = allCategoriesMap;
+    } else {
+      currentCategoryMap = categoriesMap.get(category).value;
+    }
+
+    perCapitaMap = mapPerCapita(currentCategoryMap);
+    updateCounties();
+
+  }
+
+  function updateCounties() {
+
+    paths.style('fill', function(d) {
+        var countyPerCapita = perCapitaMap.get(d.id);
+        if (countyPerCapita) {
+          return colorScale(perCapitaMap.get(d.id));
+        } else {
+          return colorScale(0);
+        }
+      })
+      .style('stroke', function(d) {
+        var countyPerCapita = perCapitaMap.get(d.id);
+        if (countyPerCapita) {
+          return colorScale(perCapitaMap.get(d.id));
+        } else {
+          return colorScale(0);
+        }
+      });
+
+  }
+
+  function showProjects(d) {
+    // TODO: Fix weird bug where, if already showing projects,
+    // shows n-1 projects
+    // console.log(d);
+    var container = d3.select('.projects-container');
+    var projects = currentCategoryMap.get(d.id);
+    var dataThing = [];
+    if (projects) {
+      dataThing = projects.values;
+    }
+    console.log(dataThing)
+
+    container.selectAll('div').remove();
+
+    var divs = container.selectAll('div')
+      .data(dataThing);
+
+    divs.enter()
+      .append('div')
+      .attr('id', function(d) {
+        return d.project_id;
+      })
+      .html(function(d) {
+        return formatProject(d);
+      })
+      .merge(divs)
+      .html(function(d) {
+        return formatProject(d);
+      });
+
+    // divs.exit().remove();
+
+    // } else {
+    //   container.selectAll('div').data([]).exit().remove();
+    // }
+  }
+
+  function formatProject(d) {
+    var projectId = d.project_id;
+    var parentCategory = d.parent_category;
+    var subcategory = d.subcategory;
+    var subcatString = (subcategory) ? ' - ' + subcategory : '';
+    var title = titleMap.get(projectId).value;
+    var blurb = blurbMap.get(projectId).value;
+    var content = '<div class="project"><span class="category">' +
+      parentCategory +
+      '</span>' +
+      '<span class="subcategory">' +
+      subcatString +
+      '</span><br/>' +
+      '<span class="title">' +
+      title +
+      '</span><br/>' +
+      '<span class="blurb">' +
+      blurb +
+      '</span></div><br/>';
+    return content;
+  }
+
+  function mapPerCapita(categoryMap) {
+    /*
+     * TODO:
+     *      1. aggregate state pops
+     *      2. check for state, conditional logic should be on that
+     */
+    var categoryPerCapitaMap = d3.map();
+    popMap.each(function(countyPop, code) {
+      var countyProjects = categoryMap.get(code);
+      if (countyProjects && countyPop) {
+        categoryPerCapitaMap.set(code, countyProjects.values.length / countyPop.pop_count);
+      } else {
+        categoryPerCapitaMap.set(code, 0);
+      }
+    });
+
+    // update domain for color scale (not necessary for ordinal scale)
+    var maxPerCapita = d3.max(d3.values(categoryPerCapitaMap));
+    var counts = [];
+    currentCategoryMap.each(function(d) {
+      if (d.key !== "NULL") {
+        counts.push(d.values.length);
+      }
+    });
+    // var maxCount = d3.max(counts);
+    // console.log(maxCount);
+    colorScale.domain([0, maxPerCapita]);
+    // opacityScale.domain([0, maxCount]);
+    return categoryPerCapitaMap;
+  }
+
+  // thanks https://github.com/vlandham/bubble_chart/blob/gh-pages/src/tooltip.js
+  function floatingTooltip(tooltipId, width) {
+    // Local variable to hold tooltip div for
+    // manipulation in other functions.
+    var tt = d3.select('body')
+      .append('div')
+      .attr('class', 'tooltip')
+      .attr('id', tooltipId)
+      .style('pointer-events', 'none');
+
+
+    // Set a width if it is provided.
+    if (width) {
+      tt.style('width', width);
+    }
+
+    // Initially it is hidden.
+    hideTooltip();
+
+    /*
+     * Display tooltip with provided content.
+     *
+     * content is expected to be HTML string.
+     *
+     * event is d3.event for positioning.
+     */
+    function showTooltip(content, event) {
+      tt.style('opacity', 1.0)
+        .html(content);
+
+      updatePosition(event);
+    }
+
+    /*
+     * Hide the tooltip div.
+     */
+    function hideTooltip() {
+      tt.style('opacity', 0.0);
+    }
+
+    /*
+     * Figure out where to place the tooltip
+     * based on d3 mouse event.
+     */
+    function updatePosition(event) {
+      var xOffset = 20;
+      var yOffset = 10;
+
+      var ttw = tt.style('width');
+      var tth = tt.style('height');
+
+      var wscrY = window.scrollY;
+      var wscrX = window.scrollX;
+
+      var curX = (document.all) ? event.clientX + wscrX : event.pageX;
+      var curY = (document.all) ? event.clientY + wscrY : event.pageY;
+      var ttleft = ((curX - wscrX + xOffset * 2 + ttw) > window.innerWidth) ?
+        curX - ttw - xOffset * 2 : curX + xOffset;
+
+      if (ttleft < wscrX + xOffset) {
+        ttleft = wscrX + xOffset;
+      }
+
+      var tttop = ((curY - wscrY + yOffset * 2 + tth) > window.innerHeight) ?
+        curY - tth - yOffset * 2 : curY + yOffset;
+
+      if (tttop < wscrY + yOffset) {
+        tttop = curY + yOffset;
+      }
+      tt.style('top', tttop + 'px')
+        .style('left', ttleft + 'px');
+    }
+
+    return {
+      showTooltip: showTooltip,
+      hideTooltip: hideTooltip,
+      updatePosition: updatePosition
+    };
+  }
+
+  /*
+   * Function called on mouseover to display the
+   * details of a bubble in the tooltip.
+   */
+  function showDetail(d) {
+    // change outline to indicate hover state.
+    d3.select(this).style('fill', 'white').style('stroke', 'white');
+    var projects;
+    var pop;
+    var allProjects;
+    var projectsByCode = currentCategoryMap.get(d.id);
+    var allProjectsByCode = allCategoriesMap.get(d.id);
+    if (allProjectsByCode) {
+      allProjects = allProjectsByCode.values.length;
+    }
+    var popCode = popMap.get(d.id);
+    if (projectsByCode) {
+      projects = projectsByCode.values.length;
+    } else {
+      projects = 0;
+    }
+    if (popCode) {
+      pop = popCode.pop_count;
+    } else {
+      pop = 'N/A';
+    }
+
+    var numProjectsString = (allProjects) ? projects + ' / ' + allProjects + ' total' : 0
+    var content = '<span class="name">County: </span><span class="value">' +
+      nameMap.get(d.id).value.county +
+      '</span><br/>' +
+      '<span class="name">State: </span><span class="value">' +
+      nameMap.get(d.id).value.state +
+      '</span><br/>' +
+      '<span class="name">Projects: </span><span class="value">' +
+      numProjectsString +
+      '</span><br/>' +
+      '<span class="name">Population: </span><span class="value">' +
+      pop +
+      '</span><br/>' +
+      '<span class="name">Per Capita x 100: </span><span class="value">' +
+      Number(perCapitaMap.get(d.id)) * 100 +
+      '</span>';
+    tooltip.showTooltip(content, d3.event);
+  }
+
+  /*
+   * Hides tooltip
+   */
+  function hideDetail(d) {
+    // reset outline
+    d3.select(this)
+      .style('fill', function(d) {
+        var countyPerCapita = perCapitaMap.get(d.id);
+        if (countyPerCapita) {
+          return colorScale(perCapitaMap.get(d.id));
+        } else {
+          return colorScale(0);
+        }
+      }).style('stroke', function(d) {
+        var countyPerCapita = perCapitaMap.get(d.id);
+        if (countyPerCapita) {
+          return colorScale(perCapitaMap.get(d.id));
+        } else {
+          return colorScale(0);
+        }
+      });
+    tooltip.hideTooltip();
+  }
+
+}
