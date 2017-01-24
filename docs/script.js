@@ -20,6 +20,9 @@ var toolTipText = "slaves";
 var controller = new ScrollMagic.Controller();
 var selectableYears = d3.selectAll(".year-row-year");
 var rightCol = d3.select(".right-col");
+var leftCol = d3.select(".left-col")
+var mapWidth = Math.min(viewportWidth*.75 - 370,600);
+console.log(viewportWidth*.75 - 400);
 var laHighlight = rightCol.select(".zoom-highlight")
 var states = [
   ["Maine","ME",1,"Northeast",23],
@@ -92,73 +95,10 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
             d3.csv("jail.csv", function(error, jailData) {
               d3.csv("flag.csv", function(error, flagData) {
 
+  leftCol.style("visibility","visible");
 
-              // var maxLightness = d3.max(flagData,function(d){return d.lightness});
-              // var shadingScale = d3.scale.linear().domain([.4,maxLightness]).range(["#ffffff","#161616"]).clamp(true);
-
-              // var connections = [];
-              // for (i = 0; i < flagData.length; i++){
-              //     for (j = 0; j < i; j++){
-              //
-              //       var xs = 0;
-              //       var ys = 0;
-              //       xs = flagData[i]["x"] - flagData[j]["x"];
-              //       xs = xs * xs;
-              //
-              //       ys = flagData[i]["y"] - flagData[j]["y"];
-              //       ys = ys * ys;
-              //
-              //       var distance = Math.sqrt( xs + ys );
-              //
-              //       if (distance < 20){
-              //           var c;
-              //           c = {"pointOne": i, "pointTwo": j, "distance": distance};
-              //           connections.push(c);
-              //       }
-              //     }
-              // }
-
-
-              // var leadImage = d3.select(".lead-image").append("svg")
-              //   .attr("width",236)
-              //   .attr("height",196)
-              //   .append("g")
-              //   .selectAll("circle")
-              //   .data(flagData)
-              //   .enter()
-              //   .append("circle")
-              //   .attr("cx",function(d){
-              //     return d.x;
-              //   })
-              //   .attr("cy",function(d){
-              //     return d.y;
-              //   })
-              //   .attr("r",function(d){
-              //     var r = Math.max((1)*d.lightness,0);
-              //     return r;
-              //   })
-              //   .style("fill",function(d){
-              //       // return shadingScale(d.lightness);
-              //       return "rgba(0,0,0,"+1*(d.lightness)+")"
-              //   })
-              //   .on("click",function(d){
-              //     console.log("here");
-              //     leadImage
-              //       .transition()
-              //       .duration(500)
-              //       // .attr("r",function(d){
-              //       //   if(d.lightness>.8){
-              //       //     return 2
-              //       //   }
-              //       //   return 0;
-              //       // })
-              //       ;
-              //   })
-              //   ;
-
-
-  var uiElements = d3.selectAll(".ui-elements");
-  var uiBoxes = d3.selectAll(".ui-boxes")
+  var uiElements = leftCol.selectAll(".ui-elements");
+  var uiBoxes = leftCol.selectAll(".ui-boxes")
 
   incarcerationData = incarcerationData.filter(function(d){
     return +d.id != 11;
@@ -307,16 +247,8 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
     });
   }
 
-  var populationContainer = d3.select(".population-container")
-  var populationWrapper = populationContainer.select(".map-population-wrapper")
-    ;
 
-  var incarcerationContainer = d3.select(".incarceration-container");
-
-  var incarcerationWrapper = incarcerationContainer.select(".map-incarceration-wrapper")
-    ;
-
-  var slaveryContainer = d3.select(".slavery-container");
+  var slaveryContainer = leftCol.select(".slavery-container");
   var populationLegendContainer = slaveryContainer.select(".population-legend-container");
   var populationLegendTitle = populationLegendContainer.select(".slavery-legend-title")
 
@@ -325,10 +257,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
   var slaveryLegendBottom = slaveryLegendContainer.select(".jail-legend-bottom");
   var slaveryLegendTitle = slaveryLegendContainer.select(".slavery-legend-title")
 
-  var mapWrapper = slaveryContainer.select(".map-wrapper")
-    // .style("height",viewportHeight-200+"px")
-    // .style("width",Math.min(viewportHeight-200,550)+"px")
-    ;
+  var mapWrapper = slaveryContainer.select(".map-wrapper");
 
   var svg = mapWrapper.select(".map-container")
     .attr("width","100%")
@@ -348,17 +277,17 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
 
   // svg.attr("clip-path", "url(#clip)")
 
-  var svgPopulation = populationWrapper.select("svg")
-    .attr("width","100%")
-    .attr("height","100%")
-    .attr("viewBox","350 0 580 580")
-    ;
+  // var svgPopulation = populationWrapper.select("svg")
+  //   .attr("width","100%")
+  //   .attr("height","100%")
+  //   .attr("viewBox","350 0 580 580")
+  //   ;
 
-  var svgIncarceration = incarcerationWrapper.select("svg")
-    .attr("width","100%")
-    .attr("height","100%")
-    .attr("viewBox","350 0 580 580")
-    ;
+  // var svgIncarceration = incarcerationWrapper.select("svg")
+  //   .attr("width","100%")
+  //   .attr("height","100%")
+  //   .attr("viewBox","350 0 580 580")
+  //   ;
 
   function adjustCircles(duration){
 
@@ -519,36 +448,36 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
 
     }
     function makePopulationLegend(){
-      var populationLegend = populationContainer.select(".slavery-legend");
+      // var populationLegend = populationContainer.select(".slavery-legend");
       var incarcerationLegend = stateIncarcerationLegend.select(".state-population-legend");
-
-      var populationLegendItem = populationLegend.selectAll("div")
-        .data(colorGradient.domain())
-        .enter()
-        .append("div")
-        .attr("class","slavery-legend-item")
-        ;
-
-      populationLegendItem.append("div")
-        .attr("class","slavery-legend-circle")
-        .style("background-color",function(d){
-          return colorGradient(d);
-        })
-        ;
-
-      populationLegendItem.append("p")
-        .attr("class","slavery-legend-text")
-        .style("color",function(d){
-          return colorGradient(d);
-        })
-        .html(function(d,i){
-          if(i==0){
-            return "0%"
-          }
-          return Math.round(d*100)+"%";
-        })
-        ;
-
+      //
+      // var populationLegendItem = populationLegend.selectAll("div")
+      //   .data(colorGradient.domain())
+      //   .enter()
+      //   .append("div")
+      //   .attr("class","slavery-legend-item")
+      //   ;
+      //
+      // populationLegendItem.append("div")
+      //   .attr("class","slavery-legend-circle")
+      //   .style("background-color",function(d){
+      //     return colorGradient(d);
+      //   })
+      //   ;
+      //
+      // populationLegendItem.append("p")
+      //   .attr("class","slavery-legend-text")
+      //   .style("color",function(d){
+      //     return colorGradient(d);
+      //   })
+      //   .html(function(d,i){
+      //     if(i==0){
+      //       return "0%"
+      //     }
+      //     return Math.round(d*100)+"%";
+      //   })
+      //   ;
+      //
       var popInterpolate = [100,250,500];
 
       incarcerationLegend.append("p")
@@ -706,7 +635,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
 
   function setupLayout(){
 
-    contentContainerWidth = Math.min(550,viewportWidth*.75-162);
+    contentContainerWidth = Math.min(mapWidth,viewportWidth*.75-162);
     heightPadding = (viewportHeight-contentContainerWidth)/2;
     var contentContainer = d3.select(".content-container");
 
@@ -722,29 +651,29 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       // .style("top",(heightPadding)+"px")
       ;
 
-    populationContainer
-      .datum("population")
-      .style("left",contentContainerWidth/2+"px")
-      .style("width",contentContainerWidth/2+"px")
-      .style("height",contentContainerWidth/2+"px")
-      .style("top",(heightPadding)+"px")
-      ;
+    // populationContainer
+    //   .datum("population")
+    //   .style("left",contentContainerWidth/2+"px")
+    //   .style("width",contentContainerWidth/2+"px")
+    //   .style("height",contentContainerWidth/2+"px")
+    //   .style("top",(heightPadding)+"px")
+    //   ;
+    //
+    // incarcerationContainer
+    //   .datum("incarceration")
+    //   .style("left",(contentContainerWidth-(contentContainerWidth/2))/2+"px")
+    //   .style("top",(contentContainerWidth/2+heightPadding)+"px")
+    //   .style("width",contentContainerWidth/2+"px")
+    //   .style("height",contentContainerWidth/2+"px")
+    //   ;
 
-    incarcerationContainer
-      .datum("incarceration")
-      .style("left",(contentContainerWidth-(contentContainerWidth/2))/2+"px")
-      .style("top",(contentContainerWidth/2+heightPadding)+"px")
-      .style("width",contentContainerWidth/2+"px")
-      .style("height",contentContainerWidth/2+"px")
-      ;
-
-    uiBoxes.on("click",function(d){
-      // uiSelected = d;
-      // uiZoom(d);
-      // if(uiSelected=="slavery"){
-      //   slaveryUnZoom();
-      // }
-    })
+    // uiBoxes.on("click",function(d){
+    //   // uiSelected = d;
+    //   // uiZoom(d);
+    //   // if(uiSelected=="slavery"){
+    //   //   slaveryUnZoom();
+    //   // }
+    // })
 
   }
 
@@ -761,11 +690,11 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
   var usStates = topojson.feature(us,objectNoHawaii).features;
   var usOutline = topojson.feature(us,objectNoHawaii).features;
 
-  var populationMapContainer = svgPopulation.append("g")
-    ;
-
-  var incarcerationMapContainer = svgIncarceration.append("g")
-    ;
+  // var populationMapContainer = svgPopulation.append("g")
+  //   ;
+  //
+  // var incarcerationMapContainer = svgIncarceration.append("g")
+  //   ;
 
   var slaveryMapContainer = svg.append("g")
     .attr("transform","translate("+margin.left+","+margin.top+")")
@@ -800,7 +729,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
     .attr("d",d3.geo.path())
     .attr("class",function(d){
       if(remove.indexOf(+d.id) == -1){
-        console.log(d.id);
+        // console.log(d.id);
         return "state-path bubble-state-path";
       }
       return "state-path";
@@ -1335,174 +1264,155 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       ;
   }
 
-  function unZoom(){
+  // function unZoom(){
+  //
+  //   startLabels
+  //     .style("visibility",null)
+  //     .style("top",null)
+  //     .style("left",null)
+  //     .style("font-size",null)
+  //     ;
+  //
+  //   // uiElements
+  //   //   .transition()
+  //   //   .duration(500)
+  //   //   .style("opacity",0)
+  //   //   ;
+  //
+  //   uiBoxes.select(".map-wrapper").transition().duration(500).style("top","0px");
+  //
+  //   uiBoxes
+  //     .transition()
+  //     .duration(1000)
+  //     .style("width",contentContainerWidth/2+"px")
+  //     .style("height",contentContainerWidth/2+"px")
+  //     .style("top",function(d){
+  //       if(d=="incarceration"){
+  //         return (contentContainerWidth/2+heightPadding)+"px"
+  //       }
+  //       return (heightPadding)+"px";
+  //     })
+  //     .style("left",function(d){
+  //       if(d=="incarceration"){
+  //         return (contentContainerWidth-(contentContainerWidth/2))/2+"px";
+  //       }
+  //       if(d=="slavery"){
+  //         return null;
+  //       }
+  //       return contentContainerWidth/2+"px";
+  //     })
+  //     ;
+  //
+  // }
 
-    startLabels
-      .style("visibility",null)
-      .style("top",null)
-      .style("left",null)
-      .style("font-size",null)
-      ;
+  // function uiZoom(chart){
+  //
+  //   // reduceLabels(chart);
+  //
+  //   // uiElements
+  //   //   .transition()
+  //   //   .duration(500)
+  //   //   .style("opacity",function(d){
+  //   //     if(d3.select(this.parentNode).datum()==chart){
+  //   //       return 1;
+  //   //     }
+  //   //     return 0;
+  //   //   })
+  //   //   ;
+  //
+  //   // uiBoxes.select(".map-wrapper").transition().duration(500).style("top",function(d){
+  //   //   if(d3.select(this.parentNode).datum()==chart){
+  //   //     return "50px"
+  //   //   }
+  //   //   return "0px";
+  //   // });
+  //   //
+  //   // var iterate = 0;
+  //   //
+  //   // uiBoxes
+  //   //   .transition()
+  //   //   .duration(1000)
+  //   //   .style("width",function(d){
+  //   //     if(d==chart){
+  //   //       return "550px";
+  //   //     }
+  //   //     return "70px"
+  //   //   })
+  //   //   .style("height",function(d){
+  //   //     if(d==chart){
+  //   //       return "550px";
+  //   //     }
+  //   //     return "70px"
+  //   //   })
+  //   //   .style("top",function(d){
+  //   //     if(d==chart){
+  //   //       return "0px"
+  //   //     }
+  //   //     iterate = iterate + 90;
+  //   //     return viewportHeight-iterate+"px"
+  //   //   })
+  //   //   .style("left",function(d){
+  //   //     if(d==chart){
+  //   //       return (contentContainerWidth-550)/2+"px";
+  //   //     }
+  //   //     return "-100px";
+  //   //   })
+  //   //   ;
+  //
+  // }
 
-    // uiElements
-    //   .transition()
-    //   .duration(500)
-    //   .style("opacity",0)
-    //   ;
+  // function slaveryUnZoom(){
+  //   slaveZoomed = false;
+  //   laHighlight.classed("zoom-highlight-style",false);
+  //
+  //   svg.transition().duration(750)
+  //     .attr("viewBox","350 0 580 580")
+  //     ;
+  //
+  //   statePaths
+  //     .style("stroke", null)
+  //     .style("stroke-width",null)
+  //     ;
+  // }
 
-    uiBoxes.select(".map-wrapper").transition().duration(500).style("top","0px");
-
-    uiBoxes
-      .transition()
-      .duration(1000)
-      .style("width",contentContainerWidth/2+"px")
-      .style("height",contentContainerWidth/2+"px")
-      .style("top",function(d){
-        if(d=="incarceration"){
-          return (contentContainerWidth/2+heightPadding)+"px"
-        }
-        return (heightPadding)+"px";
-      })
-      .style("left",function(d){
-        if(d=="incarceration"){
-          return (contentContainerWidth-(contentContainerWidth/2))/2+"px";
-        }
-        if(d=="slavery"){
-          return null;
-        }
-        return contentContainerWidth/2+"px";
-      })
-      ;
-
-  }
-
-  function uiZoom(chart){
-
-    // reduceLabels(chart);
-
-    // uiElements
-    //   .transition()
-    //   .duration(500)
-    //   .style("opacity",function(d){
-    //     if(d3.select(this.parentNode).datum()==chart){
-    //       return 1;
-    //     }
-    //     return 0;
-    //   })
-    //   ;
-
-    // uiBoxes.select(".map-wrapper").transition().duration(500).style("top",function(d){
-    //   if(d3.select(this.parentNode).datum()==chart){
-    //     return "50px"
-    //   }
-    //   return "0px";
-    // });
-    //
-    // var iterate = 0;
-    //
-    // uiBoxes
-    //   .transition()
-    //   .duration(1000)
-    //   .style("width",function(d){
-    //     if(d==chart){
-    //       return "550px";
-    //     }
-    //     return "70px"
-    //   })
-    //   .style("height",function(d){
-    //     if(d==chart){
-    //       return "550px";
-    //     }
-    //     return "70px"
-    //   })
-    //   .style("top",function(d){
-    //     if(d==chart){
-    //       return "0px"
-    //     }
-    //     iterate = iterate + 90;
-    //     return viewportHeight-iterate+"px"
-    //   })
-    //   .style("left",function(d){
-    //     if(d==chart){
-    //       return (contentContainerWidth-550)/2+"px";
-    //     }
-    //     return "-100px";
-    //   })
-    //   ;
-
-  }
-
-  function slaveryUnZoom(){
-    slaveZoomed = false;
-    laHighlight.classed("zoom-highlight-style",false);
-
-    svg.transition().duration(750)
-      .attr("viewBox","350 0 580 580")
-      ;
-
-    statePaths
-      .style("stroke", null)
-      .style("stroke-width",null)
-      ;
-  }
-
-  function slaveryZoom(){
-
-    slaveZoomed = true;
-
-    svg.transition().duration(750)
-      .attr("viewBox","350 200 400 580")
-      ;
-
-    laHighlight.classed("zoom-highlight-style",true);
-
-    statePaths
-      .style("stroke",function(d){
-        if(+d.id==22){
-          return "white";
-        }
-        return null;
-      })
-      .style("stroke-width",function(d){
-        if(+d.id==22){
-          return "2px";
-        }
-        return null;
-      })
-      ;
-  }
+  // function slaveryZoom(){
+  //
+  //   slaveZoomed = true;
+  //
+  //   svg.transition().duration(750)
+  //     .attr("viewBox","350 200 400 580")
+  //     ;
+  //
+  //   laHighlight.classed("zoom-highlight-style",true);
+  //
+  //   statePaths
+  //     .style("stroke",function(d){
+  //       if(+d.id==22){
+  //         return "white";
+  //       }
+  //       return null;
+  //     })
+  //     .style("stroke-width",function(d){
+  //       if(+d.id==22){
+  //         return "2px";
+  //       }
+  //       return null;
+  //     })
+  //     ;
+  // }
 
   makeLegends();
-
-
-  // uiElements
-  //   .transition()
-  //   .duration(500)
-  //   .style("opacity",function(d){
-  //     if(d3.select(this.parentNode).datum()=="slavery"){
-  //       return 1;
-  //     }
-  //     return 0;
-  //   })
-  //   ;
-
-  uiBoxes.select(".map-wrapper").style("top",function(d){
-    if(d3.select(this.parentNode).datum()=="slavery"){
-      return "50px"
-    }
-    return "0px";
-  });
 
   uiBoxes
     .style("width",function(d){
       if(d=="slavery"){
-        return "550px";
+        return mapWidth+"px";
       }
       return "70px"
     })
     .style("height",function(d){
       if(d=="slavery"){
-        return "550px";
+        return mapWidth+"px";
       }
       return "70px"
     })
@@ -1514,7 +1424,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
     })
     .style("left",function(d){
       if(d=="slavery"){
-        return (contentContainerWidth-550)/2+"px";
+        return (contentContainerWidth-mapWidth)/2+"px";
       }
       return "-100px";
     })
@@ -1559,7 +1469,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       offset: 0,
       duration:500
     })
-    .addIndicators({name: "slavery"}) // add indicators (requires plugin)
+    // .addIndicators({name: "slavery"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(yearSelected!="1860"){
@@ -1591,32 +1501,32 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
     ;
 
 
-  var zoomSlavery = new ScrollMagic.Scene({
-      // triggerElement: ".third-chart-wrapper",
-      triggerElement: ".zoom-trigger",
-      triggerHook:.5,
-      offset: 0,
-      duration:250
-    })
-    .addIndicators({name: "zoom lousiana"}) // add indicators (requires plugin)
-    .addTo(controller)
-    .on("enter",function(e){
-      if(e.target.controller().info("scrollDirection") == "REVERSE"){
-      }
-      else{
-        slaveryZoom();
-      }
-      ;
-    })
-    .on("leave",function(e){
-      slaveryUnZoom();
-      // if(e.target.controller().info("scrollDirection") == "FORWARD"){
-      // }
-      // else{
-      //   slaveryUnZoom();
-      // }
-    })
-    ;
+  // var zoomSlavery = new ScrollMagic.Scene({
+  //     // triggerElement: ".third-chart-wrapper",
+  //     triggerElement: ".zoom-trigger",
+  //     triggerHook:.5,
+  //     offset: 0,
+  //     duration:250
+  //   })
+  //   .addIndicators({name: "zoom lousiana"}) // add indicators (requires plugin)
+  //   .addTo(controller)
+  //   .on("enter",function(e){
+  //     if(e.target.controller().info("scrollDirection") == "REVERSE"){
+  //     }
+  //     else{
+  //       slaveryZoom();
+  //     }
+  //     ;
+  //   })
+  //   .on("leave",function(e){
+  //     slaveryUnZoom();
+  //     // if(e.target.controller().info("scrollDirection") == "FORWARD"){
+  //     // }
+  //     // else{
+  //     //   slaveryUnZoom();
+  //     // }
+  //   })
+  //   ;
 
   var zoomPopulation = new ScrollMagic.Scene({
       // triggerElement: ".third-chart-wrapper",
@@ -1625,7 +1535,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       offset: 0,
       duration:500
     })
-    .addIndicators({name: "population"}) // add indicators (requires plugin)
+    // .addIndicators({name: "population"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       if(yearSelected!="pop_2010"){
@@ -1695,7 +1605,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       offset: 0,
       duration:500
     })
-    .addIndicators({name: "bubbles"}) // add indicators (requires plugin)
+    // .addIndicators({name: "bubbles"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
 
@@ -1804,7 +1714,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       triggerHook:.5,
       offset: 0
     })
-    .addIndicators({name: "incarceration"}) // add indicators (requires plugin)
+    // .addIndicators({name: "incarceration"}) // add indicators (requires plugin)
     .addTo(controller)
     .on("enter",function(e){
       populationLegendTitle.text("Black Population")
@@ -1826,7 +1736,7 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       //   var position = elementSelected.node().getBoundingClientRect();
       //   doppler(position);
       // })
-      fadeOutElements.transition().duration(1000).delay(1000).style("opacity",0);
+      fadeOutElements.transition().duration(1000).style("opacity",0);
       slaveryLegendTop.style("opacity",0);
       slaveryLegendBottom.transition().duration(1000).delay(1000).style("opacity",1).style("top","0px");
     })
@@ -1841,7 +1751,6 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
 
       elementSelected.classed("year-row-selected",true);
       var position = elementSelected.node().getBoundingClientRect();
-      doppler(position);
 
       populationLegendTitle.text("Black Population")
       slaveryLegendTitle.text("Black Population as % of Total")
@@ -1854,11 +1763,9 @@ d3.csv("allpoints.csv", function(error, allPointsOld) {
       var text = "U.S. Black Pop. in "+year;
       startLabels.style("width",null)
       startLabelChange(text);
-      // jailSelector.transition().duration(500).style("top",null);
       fadeOutElements.transition().duration(1000).delay(1000).style("opacity",1);
       slaveryLegendTop.style("opacity",1);
       slaveryLegendBottom.transition().duration(500).style("opacity",null).style("top",null);
-
     })
     ;
 
